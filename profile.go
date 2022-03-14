@@ -19,6 +19,7 @@ type Profile struct {
 	FollowersCount int
 	FollowingCount int
 	FriendsCount   int
+	IsFollowing    bool
 	IsPrivate      bool
 	IsVerified     bool
 	Joined         *time.Time

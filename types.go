@@ -69,6 +69,7 @@ type (
 		} `json:"entities"`
 		FavouritesCount      int      `json:"favourites_count"`
 		FollowersCount       int      `json:"followers_count"`
+		Following            bool     `json:"following"`
 		FriendsCount         int      `json:"friends_count"`
 		IDStr                string   `json:"id_str"`
 		ListedCount          int      `json:"listed_count"`

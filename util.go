@@ -153,6 +153,7 @@ func parseProfile(user legacyUser) Profile {
 		FollowersCount: user.FollowersCount,
 		FollowingCount: user.FavouritesCount,
 		FriendsCount:   user.FriendsCount,
+		IsFollowing:    user.Following,
 		IsPrivate:      user.Protected,
 		IsVerified:     user.Verified,
 		LikesCount:     user.FavouritesCount,

@@ -2,6 +2,7 @@ package twitterscraper
 
 import (
 	"fmt"
+	"html"
 	"strings"
 	"time"
 )
@@ -263,6 +264,16 @@ func (timeline *timeline) parseTweet(id string) *Tweet {
 			return tco
 		})
 		tw.HTML = strings.Replace(tw.HTML, "\n", "<br>", -1)
+
+		tw.Text = html.UnescapeString(tweet.FullText)
+		for _, u := range tweet.Entities.URLs {
+			tw.Text = strings.Replace(tw.Text, u.URL, u.ExpandedURL, 1)
+		}
+		for _, u := range tweet.Entities.Media {
+			tw.Text = strings.Replace(tw.Text, u.URL, "", 1)
+		}
+		tw.Text = strings.TrimSpace(tw.Text)
+
 		return tw
 	}
 	return nil

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -173,6 +174,11 @@ func parseProfile(user legacyUser) Profile {
 
 	if len(user.Entities.URL.Urls) > 0 {
 		profile.Website = user.Entities.URL.Urls[0].ExpandedURL
+	}
+
+	profile.Biography = user.Description
+	for _, u := range user.Entities.Description.Urls {
+		profile.Biography = strings.Replace(profile.Biography, u.URL, u.ExpandedURL, 1)
 	}
 
 	return profile

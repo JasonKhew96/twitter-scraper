@@ -54,6 +54,12 @@ type (
 		CreatedAt   string `json:"created_at"`
 		Description string `json:"description"`
 		Entities    struct {
+			Description struct {
+				Urls []struct {
+					ExpandedURL string `json:"expanded_url"`
+					URL         string `json:"url"`
+				} `json:"urls"`
+			} `json:"description"`
 			URL struct {
 				Urls []struct {
 					ExpandedURL string `json:"expanded_url"`

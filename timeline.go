@@ -28,6 +28,12 @@ type timeline struct {
 					ExpandedURL string `json:"expanded_url"`
 					URL         string `json:"url"`
 				} `json:"urls"`
+				UserMentions []struct {
+					ScreenName string `json:"screen_name"`
+					Name       string `json:"name"`
+					ID         int    `json:"id"`
+					IDStr      string `json:"id_str"`
+				} `json:"user_mentions"`
 			} `json:"entities"`
 			ExtendedEntities struct {
 				Media []struct {
@@ -274,6 +280,9 @@ func (timeline *timeline) parseTweet(id string) *Tweet {
 		}
 		tw.Text = strings.TrimSpace(tw.Text)
 
+		for _, mention := range tweet.Entities.UserMentions {
+			tw.Mentions = append(tw.Mentions, mention.ScreenName)
+		}
 		return tw
 	}
 	return nil

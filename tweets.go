@@ -11,6 +11,16 @@ func (s *Scraper) GetTweets(ctx context.Context, user string, maxTweetsNbr int) 
 	return getTweetTimeline(ctx, user, maxTweetsNbr, s.FetchTweets)
 }
 
+// GetHomeTimeline returns channel with tweets from home timeline.
+func (s *Scraper) GetHomeTimeline(ctx context.Context, maxTweetsNbr int) <-chan *TweetResult {
+	return getTweetTimeline(ctx, "", maxTweetsNbr, s.FetchHomeTimeline)
+}
+
+// GetHomeLatestTimeline returns channel with tweets from home latest timeline.
+func (s *Scraper) GetHomeLatestTimeline(ctx context.Context, maxTweetsNbr int) <-chan *TweetResult {
+	return getTweetTimeline(ctx, "", maxTweetsNbr, s.FetchHomeLatestTimeline)
+}
+
 // GetTweets wrapper for default Scraper
 func GetTweets(ctx context.Context, user string, maxTweetsNbr int) <-chan *TweetResult {
 	return defaultScraper.GetTweets(ctx, user, maxTweetsNbr)
@@ -35,6 +45,70 @@ func (s *Scraper) FetchTweets(user string, maxTweetsNbr int, cursor string) ([]*
 	q := req.URL.Query()
 	q.Add("count", strconv.Itoa(maxTweetsNbr))
 	q.Add("userId", userID)
+	if cursor != "" {
+		q.Add("cursor", cursor)
+	}
+	req.URL.RawQuery = q.Encode()
+
+	var timeline timeline
+	err = s.RequestAPI(req, &timeline)
+	if err != nil {
+		return nil, "", err
+	}
+
+	tweets, nextCursor := timeline.parseTweets()
+	return tweets, nextCursor, nil
+}
+
+// FetchHomeTimeline get tweets from home timeline.
+func (s *Scraper) FetchHomeTimeline(_ string, maxTweetsNbr int, cursor string) ([]*Tweet, string, error) {
+	if s.xCsrfToken == "" || s.cookie == "" {
+		return nil, "", fmt.Errorf("xCsrfToken or cookie not set")
+	}
+
+	if maxTweetsNbr > 200 {
+		maxTweetsNbr = 200
+	}
+
+	req, err := s.newRequest("GET", "https://twitter.com/i/api/2/timeline/home.json")
+	if err != nil {
+		return nil, "", err
+	}
+
+	q := req.URL.Query()
+	q.Add("count", strconv.Itoa(maxTweetsNbr))
+	if cursor != "" {
+		q.Add("cursor", cursor)
+	}
+	req.URL.RawQuery = q.Encode()
+
+	var timeline timeline
+	err = s.RequestAPI(req, &timeline)
+	if err != nil {
+		return nil, "", err
+	}
+
+	tweets, nextCursor := timeline.parseTweets()
+	return tweets, nextCursor, nil
+}
+
+// FetchHomeLatestTimeline get tweets from home timeline.
+func (s *Scraper) FetchHomeLatestTimeline(_ string, maxTweetsNbr int, cursor string) ([]*Tweet, string, error) {
+	if s.xCsrfToken == "" || s.cookie == "" {
+		return nil, "", fmt.Errorf("xCsrfToken or cookie not set")
+	}
+
+	if maxTweetsNbr > 200 {
+		maxTweetsNbr = 200
+	}
+
+	req, err := s.newRequest("GET", "https://twitter.com/i/api/2/timeline/home_latest.json")
+	if err != nil {
+		return nil, "", err
+	}
+
+	q := req.URL.Query()
+	q.Add("count", strconv.Itoa(maxTweetsNbr))
 	if cursor != "" {
 		q.Add("cursor", cursor)
 	}

@@ -94,13 +94,17 @@ func (s *Scraper) Follow(user string) (*friendships, error) {
 		return nil, err
 	}
 
-	userID, err := s.GetUserIDByScreenName(user)
+	u, err := s.GetProfile(user)
 	if err != nil {
 		return nil, err
 	}
 
+	if u.IsFollowing {
+		return nil, fmt.Errorf("User %s is already following", user)
+	}
+
 	q := req.URL.Query()
-	q.Add("user_id", userID)
+	q.Add("user_id", u.UserID)
 	req.URL.RawQuery = q.Encode()
 
 	var friendships friendships
@@ -122,13 +126,17 @@ func (s *Scraper) Unfollow(user string) (*friendships, error) {
 		return nil, err
 	}
 
-	userID, err := s.GetUserIDByScreenName(user)
+	u, err := s.GetProfile(user)
 	if err != nil {
 		return nil, err
 	}
 
+	if !u.IsFollowing {
+		return nil, fmt.Errorf("User %s is not following", user)
+	}
+
 	q := req.URL.Query()
-	q.Add("user_id", userID)
+	q.Add("user_id", u.UserID)
 	req.URL.RawQuery = q.Encode()
 
 	var friendships friendships

@@ -2,7 +2,6 @@ package twitterscraper
 
 import (
 	"context"
-	"net/url"
 	"strconv"
 )
 
@@ -11,7 +10,7 @@ func (s *Scraper) SearchTweets(ctx context.Context, query string, maxTweetsNbr i
 	return getTweetTimeline(ctx, query, maxTweetsNbr, s.FetchSearchTweets)
 }
 
-// SearchTweets wrapper for default Scraper
+// Deprecated: SearchTweets wrapper for default Scraper
 func SearchTweets(ctx context.Context, query string, maxTweetsNbr int) <-chan *TweetResult {
 	return defaultScraper.SearchTweets(ctx, query, maxTweetsNbr)
 }
@@ -21,14 +20,13 @@ func (s *Scraper) SearchProfiles(ctx context.Context, query string, maxProfilesN
 	return getUserTimeline(ctx, query, maxProfilesNbr, s.FetchSearchProfiles)
 }
 
-// SearchProfiles wrapper for default Scraper
+// Deprecated: SearchProfiles wrapper for default Scraper
 func SearchProfiles(ctx context.Context, query string, maxProfilesNbr int) <-chan *ProfileResult {
 	return defaultScraper.SearchProfiles(ctx, query, maxProfilesNbr)
 }
 
 // getSearchTimeline gets results for a given search query, via the Twitter frontend API
 func (s *Scraper) getSearchTimeline(query string, maxNbr int, cursor string) (*timeline, error) {
-	query = url.PathEscape(query)
 	if maxNbr > 50 {
 		maxNbr = 50
 	}

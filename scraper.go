@@ -15,6 +15,7 @@ import (
 
 // Scraper object
 type Scraper struct {
+	bearerToken    string
 	client         *http.Client
 	delay          int64
 	guestToken     string
@@ -51,8 +52,14 @@ var defaultScraper *Scraper
 // New creates a Scraper object
 func New() *Scraper {
 	return &Scraper{
-		client: &http.Client{Timeout: DefaultClientTimeout},
+		bearerToken: bearerToken,
+		client:      &http.Client{Timeout: DefaultClientTimeout},
 	}
+}
+
+func (s *Scraper) setBearerToken(token string) {
+	s.bearerToken = token
+	s.guestToken = ""
 }
 
 // IsGuestToken check if guest token not empty
@@ -66,7 +73,7 @@ func (s *Scraper) SetSearchMode(mode SearchMode) *Scraper {
 	return s
 }
 
-// SetSearchMode wrapper for default Scraper
+// Deprecated: SetSearchMode wrapper for default Scraper
 func SetSearchMode(mode SearchMode) *Scraper {
 	return defaultScraper.SetSearchMode(mode)
 }
@@ -77,7 +84,7 @@ func (s *Scraper) WithDelay(seconds int64) *Scraper {
 	return s
 }
 
-// WithDelay wrapper for default Scraper
+// Deprecated: WithDelay wrapper for default Scraper
 func WithDelay(seconds int64) *Scraper {
 	return defaultScraper.WithDelay(seconds)
 }
@@ -88,7 +95,7 @@ func (s *Scraper) WithReplies(b bool) *Scraper {
 	return s
 }
 
-// WithReplies wrapper for default Scraper
+// Deprecated: WithReplies wrapper for default Scraper
 func WithReplies(b bool) *Scraper {
 	return defaultScraper.WithReplies(b)
 }
@@ -156,7 +163,7 @@ func (s *Scraper) SetProxy(proxyAddr string) error {
 	return errors.New("only support http(s) or socks5 protocol")
 }
 
-// SetProxy wrapper for default Scraper
+// Deprecated: SetProxy wrapper for default Scraper
 func SetProxy(proxy string) error {
 	return defaultScraper.SetProxy(proxy)
 }

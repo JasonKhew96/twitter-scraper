@@ -21,7 +21,7 @@ func (s *Scraper) GetHomeLatestTimeline(ctx context.Context, maxTweetsNbr int) <
 	return getTweetTimeline(ctx, "", maxTweetsNbr, s.FetchHomeLatestTimeline)
 }
 
-// GetTweets wrapper for default Scraper
+// Deprecated: GetTweets wrapper for default Scraper
 func GetTweets(ctx context.Context, user string, maxTweetsNbr int) <-chan *TweetResult {
 	return defaultScraper.GetTweets(ctx, user, maxTweetsNbr)
 }
@@ -146,7 +146,7 @@ func (s *Scraper) GetTweet(id string) (*Tweet, error) {
 	return nil, fmt.Errorf("tweet with ID %s not found", id)
 }
 
-// GetTweet wrapper for default Scraper
+// Deprecated: GetTweet wrapper for default Scraper
 func GetTweet(id string) (*Tweet, error) {
 	return defaultScraper.GetTweet(id)
 }

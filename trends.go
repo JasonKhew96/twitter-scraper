@@ -1,5 +1,9 @@
 package twitterscraper
 
+import "fmt"
+
+var bearerToken2 = "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
+
 // GetTrends return list of trends.
 func (s *Scraper) GetTrends() ([]string, error) {
 	req, err := s.newRequest("GET", "https://twitter.com/i/api/2/guide.json")
@@ -15,9 +19,15 @@ func (s *Scraper) GetTrends() ([]string, error) {
 	req.URL.RawQuery = q.Encode()
 
 	var jsn timeline
+	s.setBearerToken(bearerToken2)
 	err = s.RequestAPI(req, &jsn)
+	s.setBearerToken(bearerToken)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(jsn.Timeline.Instructions[1].AddEntries.Entries) < 2 {
+		return nil, fmt.Errorf("no trend entries found")
 	}
 
 	var trends []string
@@ -28,7 +38,7 @@ func (s *Scraper) GetTrends() ([]string, error) {
 	return trends, nil
 }
 
-// GetTrends wrapper for default Scraper
+// Deprecated: GetTrends wrapper for default Scraper
 func GetTrends() ([]string, error) {
 	return defaultScraper.GetTrends()
 }

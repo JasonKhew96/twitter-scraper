@@ -45,6 +45,7 @@ type timeline struct {
 						Other           bool `json:"other"`
 					} `json:"ext_sensitive_media_warning"`
 					Type      string `json:"type"`
+					URL       string `json:"url"`
 					VideoInfo struct {
 						Variants []struct {
 							Bitrate int    `json:"bitrate,omitempty"`
@@ -216,12 +217,12 @@ func (timeline *timeline) parseTweet(id string) *Tweet {
 			if media.Type == "photo" {
 				tw.Photos = append(tw.Photos, media.MediaURLHttps)
 			}
-			
 			if media.Type == "video" {
 				video := Video{
 					ID:      media.IDStr,
 					Preview: media.MediaURLHttps,
 				}
+
 				maxBitrate := 0
 				for _, variant := range media.VideoInfo.Variants {
 					if variant.Bitrate > maxBitrate {
@@ -230,6 +231,7 @@ func (timeline *timeline) parseTweet(id string) *Tweet {
 					}
 				}
 
+				tw.Photos = append(tw.Photos, video.Preview)
 				tw.Videos = append(tw.Videos, video)
 			}
 
@@ -256,19 +258,27 @@ func (timeline *timeline) parseTweet(id string) *Tweet {
 				username,
 			)
 		})
+		var foundedMedia []string
 		tw.HTML = reTwitterURL.ReplaceAllStringFunc(tw.HTML, func(tco string) string {
 			for _, entity := range tweet.Entities.URLs {
 				if tco == entity.URL {
 					return fmt.Sprintf(`<a href="%s">%s</a>`, entity.ExpandedURL, tco)
 				}
 			}
-			for _, entity := range tweet.Entities.Media {
+			for _, entity := range tweet.ExtendedEntities.Media {
 				if tco == entity.URL {
+					foundedMedia = append(foundedMedia, entity.MediaURLHttps)
 					return fmt.Sprintf(`<br><a href="%s"><img src="%s"/></a>`, tco, entity.MediaURLHttps)
 				}
 			}
 			return tco
 		})
+		for _, url := range tw.Photos {
+			if stringInSlice(url, foundedMedia) {
+				continue
+			}
+			tw.HTML += fmt.Sprintf(`<br><img src="%s"/>`, url)
+		}
 		tw.HTML = strings.Replace(tw.HTML, "\n", "<br>", -1)
 
 		tw.Text = html.UnescapeString(tweet.FullText)

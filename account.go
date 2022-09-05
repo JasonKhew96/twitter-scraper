@@ -100,7 +100,7 @@ func (s *Scraper) Follow(user string) (*friendships, error) {
 	}
 
 	if u.IsFollowing {
-		return nil, fmt.Errorf("User %s is already following", user)
+		return nil, fmt.Errorf("user %s is already following", user)
 	}
 
 	q := req.URL.Query()
@@ -132,7 +132,7 @@ func (s *Scraper) Unfollow(user string) (*friendships, error) {
 	}
 
 	if !u.IsFollowing {
-		return nil, fmt.Errorf("User %s is not following", user)
+		return nil, fmt.Errorf("user %s is not following", user)
 	}
 
 	q := req.URL.Query()

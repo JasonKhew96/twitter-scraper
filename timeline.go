@@ -234,6 +234,19 @@ func (timeline *timeline) parseTweet(id string) *Tweet {
 				tw.Photos = append(tw.Photos, video.Preview)
 				tw.Videos = append(tw.Videos, video)
 			}
+			if media.Type == "animated_gif" {
+				animatedGif := Video{
+					ID:      media.IDStr,
+					Preview: media.MediaURLHttps,
+				}
+
+				if len(media.VideoInfo.Variants) > 0 {
+					animatedGif.URL = media.VideoInfo.Variants[0].URL
+				}
+
+				tw.Photos = append(tw.Photos, animatedGif.Preview)
+				tw.AnimatedGif = append(tw.AnimatedGif, animatedGif)
+			}
 
 			if !tw.SensitiveContent {
 				sensitive := media.ExtSensitiveMediaWarning

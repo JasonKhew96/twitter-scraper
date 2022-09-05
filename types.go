@@ -37,6 +37,7 @@ type (
 		Username         string
 		Videos           []Video
 		SensitiveContent bool
+		AnimatedGif      []Video
 	}
 
 	// ProfileResult of scrapping.

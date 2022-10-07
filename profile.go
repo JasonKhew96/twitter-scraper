@@ -1,8 +1,10 @@
 package twitterscraper
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 )
@@ -36,49 +38,98 @@ type Profile struct {
 }
 
 type user struct {
+	Result struct {
+		TypeName string     `json:"__typename"`
+		RestID   string     `json:"rest_id"`
+		Legacy   legacyUser `json:"legacy"`
+		Reason   string     `json:"reason"`
+	} `json:"result"`
+}
+
+type userByScreenNameResp struct {
 	Data struct {
-		User struct {
-			RestID string     `json:"rest_id"`
-			Legacy legacyUser `json:"legacy"`
-		} `json:"user"`
+		User *user `json:"user"`
 	} `json:"data"`
-	Errors []struct {
-		Message string `json:"message"`
-	} `json:"errors"`
+}
+
+type GetProfileVariables struct {
+	ScreenName                 string `json:"screen_name"`
+	WithSafetyModeUserFields   bool   `json:"withSafetyModeUserFields"`
+	WithSuperFollowsUserFields bool   `json:"withSuperFollowsUserFields"`
+}
+
+type GetProfileFeatures struct {
+	VerifiedPhoneLabelEnabled                     bool `json:"verified_phone_label_enabled"`
+	ResponsiveWebGraphqlTimelineNavigationEnabled bool `json:"responsive_web_graphql_timeline_navigation_enabled"`
 }
 
 // GetProfile return parsed user profile.
-func (s *Scraper) GetProfile(username string) (Profile, error) {
-	var jsn user
-	req, err := http.NewRequest("GET", "https://api.twitter.com/graphql/4S2ihIKfF3xhp-ENxvUAfQ/UserByScreenName?variables=%7B%22screen_name%22%3A%22"+username+"%22%2C%22withHighlightedLabel%22%3Atrue%7D", nil)
-	if err != nil {
-		return Profile{}, err
+func (s *Scraper) GetProfile(variables *GetProfileVariables, features *GetProfileFeatures) (*Profile, error) {
+	if variables == nil {
+		return nil, fmt.Errorf("variables is nil")
 	}
 
+	if features == nil {
+		features = &GetProfileFeatures{}
+	}
+
+	jsonVariables, err := json.Marshal(variables)
+	if err != nil {
+		return nil, err
+	}
+
+	jsonFeatures, err := json.Marshal(features)
+	if err != nil {
+		return nil, err
+	}
+
+	queries := url.Values{}
+	queries.Add("variables", string(jsonVariables))
+	queries.Add("features", string(jsonFeatures))
+
+	reqUrl, err := url.Parse("https://twitter.com/i/api/graphql/HThKoC4xtXHcuMIok4O0HA/UserByScreenName")
+	if err != nil {
+		return nil, err
+	}
+
+	reqUrl.RawQuery = queries.Encode()
+
+	req, err := http.NewRequest("GET", reqUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var jsn userByScreenNameResp
 	err = s.RequestAPI(req, &jsn)
 	if err != nil {
-		return Profile{}, err
+		return nil, err
 	}
 
-	if len(jsn.Errors) > 0 {
-		return Profile{}, fmt.Errorf("%s", jsn.Errors[0].Message)
+	if jsn.Data.User == nil {
+		return nil, fmt.Errorf("user '%s' not found", variables.ScreenName)
 	}
 
-	if jsn.Data.User.RestID == "" {
-		return Profile{}, fmt.Errorf("rest_id not found")
-	}
-	jsn.Data.User.Legacy.IDStr = jsn.Data.User.RestID
-
-	if jsn.Data.User.Legacy.ScreenName == "" {
-		return Profile{}, fmt.Errorf("either @%s does not exist or is private", username)
+	if jsn.Data.User.Result.TypeName != "User" {
+		return nil, fmt.Errorf("%s", jsn.Data.User.Result.Reason)
 	}
 
-	return parseProfile(jsn.Data.User.Legacy), nil
+	if jsn.Data.User.Result.RestID == "" {
+		return nil, fmt.Errorf("rest_id not found")
+	}
+	jsn.Data.User.Result.Legacy.IDStr = jsn.Data.User.Result.RestID
+
+	if jsn.Data.User.Result.Legacy.ScreenName == "" {
+		return nil, fmt.Errorf("either @%s does not exist or is private", variables.ScreenName)
+	}
+
+	profile := parseProfile(jsn.Data.User.Result.Legacy)
+
+	return &profile, nil
 }
 
 // Deprecated: GetProfile wrapper for default scraper
-func GetProfile(username string) (Profile, error) {
-	return defaultScraper.GetProfile(username)
+func GetProfile(username string) (*Profile, error) {
+	return defaultScraper.GetProfile(&GetProfileVariables{ScreenName: username}, nil)
 }
 
 // GetUserIDByScreenName from API
@@ -88,7 +139,7 @@ func (s *Scraper) GetUserIDByScreenName(screenName string) (string, error) {
 		return id.(string), nil
 	}
 
-	profile, err := s.GetProfile(screenName)
+	profile, err := s.GetProfile(&GetProfileVariables{ScreenName: screenName}, nil)
 	if err != nil {
 		return "", err
 	}

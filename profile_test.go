@@ -5,15 +5,15 @@ import (
 	"testing"
 	"time"
 
+	twitterscraper "github.com/JasonKhew96/twitter-scraper"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	twitterscraper "github.com/JasonKhew96/twitter-scraper"
 )
 
 func TestGetProfile(t *testing.T) {
 	loc := time.FixedZone("UTC", 0)
 	joined := time.Date(2010, 01, 18, 8, 49, 30, 0, loc)
-	sample := twitterscraper.Profile{
+	sample := &twitterscraper.Profile{
 		Avatar:    "https://pbs.twimg.com/profile_images/436075027193004032/XlDa2oaz_normal.jpeg",
 		Banner:    "https://pbs.twimg.com/profile_banners/106037940/1541084318",
 		Biography: "nothing",
@@ -31,7 +31,7 @@ func TestGetProfile(t *testing.T) {
 	}
 
 	scraper := twitterscraper.New()
-	profile, err := scraper.GetProfile("nomadic_ua")
+	profile, err := scraper.GetProfile(&twitterscraper.GetProfileVariables{ScreenName: "nomadic_ua"}, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -65,7 +65,7 @@ func TestGetProfile(t *testing.T) {
 func TestGetProfilePrivate(t *testing.T) {
 	loc := time.FixedZone("UTC", 0)
 	joined := time.Date(2020, 1, 26, 0, 3, 5, 0, loc)
-	sample := twitterscraper.Profile{
+	sample := &twitterscraper.Profile{
 		Avatar:    "https://pbs.twimg.com/profile_images/1222218816484020224/ik9P1QZt_normal.jpg",
 		Banner:    "",
 		Biography: `"Beware that, when fighting monsters, you yourself do not become a monster... for when you gaze long into the abyss. The abyss gazes also into you." -Nietzsche`,
@@ -84,7 +84,7 @@ func TestGetProfilePrivate(t *testing.T) {
 
 	scraper := twitterscraper.New()
 	// some random private profile (found via google)
-	profile, err := scraper.GetProfile("tomdumont")
+	profile, err := scraper.GetProfile(&twitterscraper.GetProfileVariables{ScreenName: "tomdumont"}, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -114,21 +114,21 @@ func TestGetProfilePrivate(t *testing.T) {
 
 func TestGetProfileErrorSuspended(t *testing.T) {
 	scraper := twitterscraper.New()
-	_, err := scraper.GetProfile("123")
+	_, err := scraper.GetProfile(&twitterscraper.GetProfileVariables{ScreenName: "123"}, nil)
 	if err == nil {
 		t.Error("Expected Error, got success")
 	} else {
-		if err.Error() != "Authorization: User has been suspended. (63)" {
-			t.Errorf("Expected error 'Authorization: User has been suspended. (63)', got '%s'", err)
+		if err.Error() != "Suspended" {
+			t.Errorf("Expected error 'Suspended', got '%s'", err)
 		}
 	}
 }
 
 func TestGetProfileErrorNotFound(t *testing.T) {
 	neUser := "sample3123131"
-	expectedError := fmt.Sprintf("User '%s' not found", neUser)
+	expectedError := fmt.Sprintf("user '%s' not found", neUser)
 	scraper := twitterscraper.New()
-	_, err := scraper.GetProfile(neUser)
+	_, err := scraper.GetProfile(&twitterscraper.GetProfileVariables{ScreenName: neUser}, nil)
 	if err == nil {
 		t.Error("Expected Error, got success")
 	} else {

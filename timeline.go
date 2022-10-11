@@ -225,6 +225,7 @@ func (timeline *timeline) parseTweet(id string) *Tweet {
 				mediaVideo := MediaVideo{
 					IsAnimatedGif: media.Type == "animated_gif",
 					Preview:       media.MediaURLHttps,
+					Alt:           media.ExtAltText,
 				}
 
 				maxBitrate := -1

@@ -3,6 +3,7 @@ package twitterscraper
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -192,4 +193,13 @@ func stringInSlice(a string, list []string) bool {
 		}
 	}
 	return false
+}
+
+func clearUrlQueries(link string) string {
+	newUrl := link
+	if tmp, err := url.Parse(newUrl); err == nil {
+		tmp.RawQuery = ""
+		newUrl = tmp.String()
+	}
+	return newUrl
 }

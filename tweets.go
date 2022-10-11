@@ -28,8 +28,8 @@ func GetTweets(ctx context.Context, user string, maxTweetsNbr int) <-chan *Tweet
 
 // FetchTweets gets tweets for a given user, via the Twitter frontend API.
 func (s *Scraper) FetchTweets(user string, maxTweetsNbr int, cursor string) ([]*Tweet, string, error) {
-	if maxTweetsNbr > 200 {
-		maxTweetsNbr = 200
+	if maxTweetsNbr > 20 {
+		maxTweetsNbr = 20
 	}
 
 	userID, err := s.GetUserIDByScreenName(user)

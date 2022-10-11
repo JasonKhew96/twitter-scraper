@@ -52,6 +52,7 @@ type timeline struct {
 							URL     string `json:"url"`
 						} `json:"variants"`
 					} `json:"video_info"`
+					ExtAltText string `json:"ext_alt_text"`
 				} `json:"media"`
 			} `json:"extended_entities"`
 			InReplyToStatusIDStr string    `json:"in_reply_to_status_id_str"`
@@ -215,37 +216,26 @@ func (timeline *timeline) parseTweet(id string) *Tweet {
 		}
 		for _, media := range tweet.ExtendedEntities.Media {
 			if media.Type == "photo" {
-				tw.Photos = append(tw.Photos, media.MediaURLHttps)
+				tw.Medias = append(tw.Medias, MediaPhoto{
+					Url: media.MediaURLHttps,
+					Alt: media.ExtAltText,
+				})
 			}
-			if media.Type == "video" {
-				video := Video{
-					ID:      media.IDStr,
-					Preview: media.MediaURLHttps,
+			if media.Type == "video" || media.Type == "animated_gif" {
+				mediaVideo := MediaVideo{
+					IsAnimatedGif: media.Type == "animated_gif",
+					Preview:       media.MediaURLHttps,
 				}
 
-				maxBitrate := 0
+				maxBitrate := -1
 				for _, variant := range media.VideoInfo.Variants {
 					if variant.Bitrate > maxBitrate {
-						video.URL = strings.TrimSuffix(variant.URL, "?tag=10")
+						mediaVideo.Url = clearUrlQueries(variant.URL)
 						maxBitrate = variant.Bitrate
 					}
 				}
 
-				tw.Photos = append(tw.Photos, video.Preview)
-				tw.Videos = append(tw.Videos, video)
-			}
-			if media.Type == "animated_gif" {
-				animatedGif := Video{
-					ID:      media.IDStr,
-					Preview: media.MediaURLHttps,
-				}
-
-				if len(media.VideoInfo.Variants) > 0 {
-					animatedGif.URL = media.VideoInfo.Variants[0].URL
-				}
-
-				tw.Photos = append(tw.Photos, animatedGif.Preview)
-				tw.AnimatedGif = append(tw.AnimatedGif, animatedGif)
+				tw.Medias = append(tw.Medias, mediaVideo)
 			}
 
 			if !tw.SensitiveContent {
@@ -286,11 +276,14 @@ func (timeline *timeline) parseTweet(id string) *Tweet {
 			}
 			return tco
 		})
-		for _, url := range tw.Photos {
-			if stringInSlice(url, foundedMedia) {
-				continue
+		for _, media := range tw.Medias {
+			switch v := media.(type) {
+			case MediaPhoto:
+				if stringInSlice(v.Url, foundedMedia) {
+					continue
+				}
+				tw.HTML += fmt.Sprintf(`<br><img src="%s"/>`, v.Url)
 			}
-			tw.HTML += fmt.Sprintf(`<br><img src="%s"/>`, url)
 		}
 		tw.HTML = strings.Replace(tw.HTML, "\n", "<br>", -1)
 

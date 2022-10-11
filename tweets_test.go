@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
+	twitterscraper "github.com/JasonKhew96/twitter-scraper"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	twitterscraper "github.com/JasonKhew96/twitter-scraper"
 )
 
 var cmpOptions = cmp.Options{
@@ -18,7 +18,7 @@ var cmpOptions = cmp.Options{
 
 func TestGetTweets(t *testing.T) {
 	count := 0
-	maxTweetsNbr := 300
+	maxTweetsNbr := 200
 	dupcheck := make(map[string]bool)
 	scraper := twitterscraper.New()
 	for tweet := range scraper.GetTweets(context.Background(), "Twitter", maxTweetsNbr) {
@@ -53,15 +53,18 @@ func TestGetTweets(t *testing.T) {
 			if tweet.Timestamp == 0 {
 				t.Error("Expected tweet Timestamp is greater than zero")
 			}
-			for _, video := range tweet.Videos {
-				if video.ID == "" {
-					t.Error("Expected tweet video ID is empty")
-				}
-				if video.Preview == "" {
-					t.Error("Expected tweet video Preview is empty")
-				}
-				if video.URL == "" {
-					t.Error("Expected tweet video URL is empty")
+			for _, media := range tweet.Medias {
+				switch v := media.(type) {
+				case twitterscraper.MediaVideo:
+					if v.IsAnimatedGif {
+						t.Error("Expected video is not animated gif")
+					}
+					if v.Preview == "" {
+						t.Error("Expected video preview is empty")
+					}
+					if v.Url == "" {
+						t.Error("Expected video URL is empty")
+					}
 				}
 			}
 		}
@@ -73,23 +76,28 @@ func TestGetTweets(t *testing.T) {
 
 func TestGetTweet(t *testing.T) {
 	sample := twitterscraper.Tweet{
-		HTML:         "That thing you didn’t Tweet but wanted to but didn’t but got so close but then were like nah. <br><br>We have a place for that now—Fleets! <br><br>Rolling out to everyone starting today. <br><a href=\"https://t.co/auQAHXZMfH\"><img src=\"https://pbs.twimg.com/amplify_video_thumb/1328684333599756289/img/cP5KwbIXbGunNSBy.jpg\"/></a>",
-		ID:           "1328684389388185600",
-		PermanentURL: "https://twitter.com/Twitter/status/1328684389388185600",
-		Photos:       []string{"https://pbs.twimg.com/amplify_video_thumb/1328684333599756289/img/cP5KwbIXbGunNSBy.jpg"},
-		Text:         "That thing you didn’t Tweet but wanted to but didn’t but got so close but then were like nah. \n\nWe have a place for that now—Fleets! \n\nRolling out to everyone starting today. https://t.co/auQAHXZMfH",
-		TimeParsed:   time.Date(2020, 11, 17, 13, 0, 18, 0, time.FixedZone("UTC", 0)),
-		Timestamp:    1605618018,
+		HTML:         "whoa, it works<br><br>now everyone can mix GIFs, videos, and images in one Tweet, available on iOS and Android <br><a href=\"https://t.co/LVVolAQPZi\"><img src=\"https://pbs.twimg.com/tweet_video_thumb/FeU5fh1XkA0vDAE.jpg\"/></a><br><img src=\"https://pbs.twimg.com/media/FeU5fhPXkCoZXZB.jpg\"/>",
+		ID:           "1577730467436138524",
+		PermanentURL: "https://twitter.com/Twitter/status/1577730467436138524",
+		Text:         "whoa, it works\n\nnow everyone can mix GIFs, videos, and images in one Tweet, available on iOS and Android",
+		TimeParsed:   time.Date(2022, 10, 05, 18, 40, 30, 0, time.FixedZone("UTC", 0)),
+		Timestamp:    1664995230,
 		UserID:       "783214",
 		Username:     "Twitter",
-		Videos: []twitterscraper.Video{{
-			ID:      "1328684333599756289",
-			Preview: "https://pbs.twimg.com/amplify_video_thumb/1328684333599756289/img/cP5KwbIXbGunNSBy.jpg",
-			URL:     "https://video.twimg.com/amplify_video/1328684333599756289/vid/960x720/PcL8yv8KhgQ48Qpt.mp4?tag=13",
-		}},
+		Medias: []twitterscraper.Media{
+			twitterscraper.MediaVideo{
+				IsAnimatedGif: true,
+				Preview:       "https://pbs.twimg.com/tweet_video_thumb/FeU5fh1XkA0vDAE.jpg",
+				Url:           "https://video.twimg.com/tweet_video/FeU5fh1XkA0vDAE.mp4",
+			},
+			twitterscraper.MediaPhoto{
+				Url: "https://pbs.twimg.com/media/FeU5fhPXkCoZXZB.jpg",
+				Alt: "picture of Kermit doing a one legged stand on a bicycle seat riding through the park",
+			},
+		},
 	}
 	scraper := twitterscraper.New()
-	tweet, err := scraper.GetTweet("1328684389388185600")
+	tweet, err := scraper.GetTweet("1577730467436138524")
 	if err != nil {
 		t.Error(err)
 	} else {
@@ -105,15 +113,18 @@ func TestQuotedAndReply(t *testing.T) {
 		ID:           "1237110546383724547",
 		Likes:        485,
 		PermanentURL: "https://twitter.com/VsauceTwo/status/1237110546383724547",
-		Photos:       []string{"https://pbs.twimg.com/media/ESsZa9AXgAIAYnF.jpg"},
-		Replies:      12,
-		Retweets:     18,
-		Text:         "The Easiest Problem Everyone Gets Wrong \n\n[new video] --&gt; https://t.co/YdaeDYmPAU https://t.co/iKu4Xs6o2V",
-		TimeParsed:   time.Date(2020, 03, 9, 20, 18, 33, 0, time.FixedZone("UTC", 0)),
-		Timestamp:    1583785113,
-		URLs:         []string{"https://youtu.be/ytfCdqWhmdg"},
-		UserID:       "978944851",
-		Username:     "VsauceTwo",
+		// Photos:       []string{"https://pbs.twimg.com/media/ESsZa9AXgAIAYnF.jpg"},
+		Replies:    12,
+		Retweets:   18,
+		Text:       "The Easiest Problem Everyone Gets Wrong \n\n[new video] --> https://youtu.be/ytfCdqWhmdg",
+		TimeParsed: time.Date(2020, 03, 9, 20, 18, 33, 0, time.FixedZone("UTC", 0)),
+		Timestamp:  1583785113,
+		URLs:       []string{"https://youtu.be/ytfCdqWhmdg"},
+		UserID:     "978944851",
+		Username:   "VsauceTwo",
+		Medias: []twitterscraper.Media{twitterscraper.MediaPhoto{
+			Url: "https://pbs.twimg.com/media/ESsZa9AXgAIAYnF.jpg",
+		}},
 	}
 	scraper := twitterscraper.New()
 	tweet, err := scraper.GetTweet("1237110897597976576")

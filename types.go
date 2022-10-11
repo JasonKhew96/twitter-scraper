@@ -3,11 +3,21 @@ package twitterscraper
 import "time"
 
 type (
-	// Video type.
-	Video struct {
-		ID      string
-		Preview string
-		URL     string
+	// Media type
+	Media interface{}
+
+	// MediaPhoto type
+	MediaPhoto struct {
+		Url string
+		Alt string
+	}
+
+	// MediaVideo type
+	MediaVideo struct {
+		IsAnimatedGif bool
+		Preview       string
+		Url           string
+		Alt           string
 	}
 
 	// Tweet type.
@@ -23,7 +33,6 @@ type (
 		Likes            int
 		Mentions         []string
 		PermanentURL     string
-		Photos           []string
 		Place            *Place
 		QuotedStatus     *Tweet
 		Replies          int
@@ -35,9 +44,8 @@ type (
 		URLs             []string
 		UserID           string
 		Username         string
-		Videos           []Video
 		SensitiveContent bool
-		AnimatedGif      []Video
+		Medias           []Media
 	}
 
 	// ProfileResult of scrapping.

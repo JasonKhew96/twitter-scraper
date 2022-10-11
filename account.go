@@ -94,7 +94,7 @@ func (s *Scraper) Follow(user string) (*friendships, error) {
 		return nil, err
 	}
 
-	u, err := s.GetProfile(&GetProfileVariables{ScreenName: user}, nil)
+	u, err := s.GetProfile(user)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (s *Scraper) Unfollow(user string) (*friendships, error) {
 		return nil, err
 	}
 
-	u, err := s.GetProfile(&GetProfileVariables{ScreenName: user}, nil)
+	u, err := s.GetProfile(user)
 	if err != nil {
 		return nil, err
 	}

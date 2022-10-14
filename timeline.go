@@ -1,11 +1,24 @@
 package twitterscraper
 
 import (
+	"encoding/json"
 	"fmt"
 	"html"
 	"strings"
 	"time"
 )
+
+type card struct {
+	MediaEntities map[string]struct {
+		MediaUrlHttps string `json:"media_url_https"`
+		VideoInfo     struct {
+			Variants []struct {
+				Bitrate int    `json:"bitrate"`
+				URL     string `json:"url"`
+			} `json:"variants"`
+		} `json:"video_info"`
+	} `json:"media_entities"`
+}
 
 // timeline JSON object
 type timeline struct {
@@ -63,6 +76,14 @@ type timeline struct {
 			QuotedStatusIDStr    string    `json:"quoted_status_id_str"`
 			Time                 time.Time `json:"time"`
 			UserIDStr            string    `json:"user_id_str"`
+			Card                 struct {
+				BindingValues struct {
+					UnifiedCard struct {
+						Type        string `json:"type"`
+						StringValue string `json:"string_value"`
+					} `json:"unified_card"`
+				} `json:"binding_values"`
+			} `json:"card"`
 		} `json:"tweets"`
 		Users map[string]struct {
 			CreatedAt   string `json:"created_at"`
@@ -243,6 +264,28 @@ func (timeline *timeline) parseTweet(id string) *Tweet {
 			if !tw.SensitiveContent {
 				sensitive := media.ExtSensitiveMediaWarning
 				tw.SensitiveContent = sensitive.AdultContent || sensitive.GraphicViolence || sensitive.Other
+			}
+		}
+
+		if tweet.Card.BindingValues.UnifiedCard.StringValue != "" {
+			var card card
+			if err := json.NewDecoder(strings.NewReader(tweet.Card.BindingValues.UnifiedCard.StringValue)).Decode(&card); err != nil {
+				fmt.Println(err)
+			}
+			for _, entity := range card.MediaEntities {
+				mediaVideo := MediaVideo{
+					Preview: entity.MediaUrlHttps,
+				}
+
+				maxBitrate := -1
+				for _, variant := range entity.VideoInfo.Variants {
+					if variant.Bitrate > maxBitrate {
+						mediaVideo.Url = clearUrlQueries(variant.URL)
+						maxBitrate = variant.Bitrate
+					}
+				}
+
+				tw.Medias = append(tw.Medias, mediaVideo)
 			}
 		}
 

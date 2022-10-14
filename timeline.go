@@ -105,7 +105,8 @@ type timeline struct {
 						Item struct {
 							Content struct {
 								Tweet struct {
-									ID string `json:"id"`
+									ID            string       `json:"id"`
+									SocialContext *interface{} `json:"socialContext,omitempty"`
 								} `json:"tweet"`
 								User struct {
 									ID string `json:"id"`
@@ -317,6 +318,9 @@ func (timeline *timeline) parseTweets() ([]*Tweet, string) {
 		}
 		for _, entry := range instruction.AddEntries.Entries {
 			if tweet := timeline.parseTweet(entry.Content.Item.Content.Tweet.ID); tweet != nil {
+				if entry.Content.Item.Content.Tweet.SocialContext != nil {
+					tweet.IsRecommended = true
+				}
 				orderedTweets = append(orderedTweets, tweet)
 			}
 			if entry.Content.Operation.Cursor.CursorType == "Bottom" {

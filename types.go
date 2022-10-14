@@ -30,6 +30,7 @@ type (
 		IsPin            bool
 		IsReply          bool
 		IsRetweet        bool
+		IsRecommended    bool
 		Likes            int
 		Mentions         []string
 		PermanentURL     string

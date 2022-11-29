@@ -11,6 +11,7 @@ import (
 type card struct {
 	MediaEntities map[string]struct {
 		MediaUrlHttps string `json:"media_url_https"`
+		Type          string
 		VideoInfo     struct {
 			Variants []struct {
 				Bitrate int    `json:"bitrate"`
@@ -273,19 +274,28 @@ func (timeline *timeline) parseTweet(id string) *Tweet {
 				fmt.Println(err)
 			}
 			for _, entity := range card.MediaEntities {
-				mediaVideo := MediaVideo{
-					Preview: entity.MediaUrlHttps,
-				}
-
-				maxBitrate := -1
-				for _, variant := range entity.VideoInfo.Variants {
-					if variant.Bitrate > maxBitrate {
-						mediaVideo.Url = clearUrlQueries(variant.URL)
-						maxBitrate = variant.Bitrate
+				switch entity.Type {
+				case "photo":
+					tw.Medias = append(tw.Medias, MediaPhoto{
+						Url: entity.MediaUrlHttps,
+					})
+				case "video", "animated_gif":
+					mediaVideo := MediaVideo{
+						IsAnimatedGif: entity.Type == "animated_gif",
+						Preview:       entity.MediaUrlHttps,
 					}
+
+					maxBitrate := -1
+					for _, variant := range entity.VideoInfo.Variants {
+						if variant.Bitrate > maxBitrate {
+							mediaVideo.Url = clearUrlQueries(variant.URL)
+							maxBitrate = variant.Bitrate
+						}
+					}
+
+					tw.Medias = append(tw.Medias, mediaVideo)
 				}
 
-				tw.Medias = append(tw.Medias, mediaVideo)
 			}
 		}
 
